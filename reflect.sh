@@ -49,9 +49,14 @@ show() {
 }
 
 sep() {
+    show "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+}
+sepp() {
     show "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 }
+
 
 # -------------------------
 # header
@@ -146,7 +151,7 @@ while read -r url; do
         show "${BLUE}Total Parameters :${NC} ${#params[@]}"
         show "${BLUE}Reflections      :${NC} ${#reflected_list[@]}"
 
-        sep
+        sepp
     fi
 
 done < "$INPUT"
