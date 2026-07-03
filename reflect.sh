@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # =========================
-# Reflection Finder (Color + Save Output)
-# Usage: ./reflect.sh -i urls.txt -o output.txt
+# Reflection Finder (with Headers + Output Save)
+# Usage:
+# ./reflect.sh -i urls.txt -o out.txt -H "Cookie: abc" -H "Authorization: Bearer token"
 # =========================
 
 RED='\033[0;31m'
@@ -15,14 +16,22 @@ GRAY='\033[1;30m'
 NC='\033[0m'
 
 usage() {
-    echo "Usage: $0 -i urls.txt -o output.txt"
+    echo "Usage: $0 -i urls.txt [-o output.txt] [-H \"Header: value\"]"
     exit 1
 }
 
-while getopts "i:o:" opt; do
+INPUT=""
+OUTPUT=""
+HEADERS=()
+
+# -------------------------
+# parse args (-H repeatable)
+# -------------------------
+while getopts "i:o:H:" opt; do
     case $opt in
         i) INPUT="$OPTARG" ;;
         o) OUTPUT="$OPTARG" ;;
+        H) HEADERS+=("$OPTARG") ;;
         *) usage ;;
     esac
 done
@@ -39,7 +48,7 @@ if [ -n "$OUTPUT" ]; then
 fi
 
 # -------------------------
-# helper functions
+# logging function
 # -------------------------
 show() {
     echo -e "$1"
@@ -50,20 +59,14 @@ show() {
 
 sep() {
     show "${GRAY}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
 }
-sepp() {
-    show "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-}
-
 
 # -------------------------
-# header
+# banner
 # -------------------------
 show ""
 show "${PURPLE}╔══════════════════════════════════════════════════════════════╗${NC}"
-show "${PURPLE}║                 PARAMETER REFLECTION FINDER                  ║${NC}"
+show "${PURPLE}║                 PARAMETER REFLECTION FINDER                ║${NC}"
 show "${PURPLE}╚══════════════════════════════════════════════════════════════╝${NC}"
 show ""
 
@@ -108,7 +111,19 @@ while read -r url; do
 
     test_url="${base}?${new_query}"
 
-    body=$(curl -ksL --max-time 15 --connect-timeout 10 "$test_url" 2>/dev/null)
+    # -------------------------
+    # build curl headers
+    # -------------------------
+    CURL_HEADERS=()
+    for h in "${HEADERS[@]}"; do
+        CURL_HEADERS+=("-H" "$h")
+    done
+
+    body=$(curl -ksL \
+        --max-time 15 \
+        --connect-timeout 10 \
+        "${CURL_HEADERS[@]}" \
+        "$test_url" 2>/dev/null)
 
     reflected_list=()
 
@@ -133,7 +148,6 @@ while read -r url; do
         ((reflected_urls++))
 
         sep
-
         show "${GREEN}✓ REFLECTION FOUND${NC}"
         sep
 
@@ -150,8 +164,7 @@ while read -r url; do
         show ""
         show "${BLUE}Total Parameters :${NC} ${#params[@]}"
         show "${BLUE}Reflections      :${NC} ${#reflected_list[@]}"
-
-        sepp
+        sep
     fi
 
 done < "$INPUT"
@@ -170,4 +183,4 @@ show "${CYAN}URLs Tested           :${NC} $tested_urls"
 show "${GREEN}URLs With Reflection  :${NC} $reflected_urls"
 show "${YELLOW}Reflected Parameters  :${NC} $reflected_params"
 
-show ""
+echo ""
